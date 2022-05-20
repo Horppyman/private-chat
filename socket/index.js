@@ -40,16 +40,26 @@ io.on('connection', (socket)=>{
         var group_id = (data.user_id>data.other_user_id)?data.user_id+data.other_user_id:data.other_user_id+data.user_id;
         var time = moment().format("h:mm A");
         data.time = time;
-        for (var index in sockets[data.user_id]){
-            sockets[data.user_id][index].emit('receive_message', data);
-        }
-        for (var index in sockets[data.other_user_id]){
-            sockets[data.other_user_id][index].emit('receive_message', data);
-        }
+      
+        
         con.query(`INSERT INTO chats (user_id,other_user_id,message,group_id) values (${data.user_id},${data.other_user_id},'${data.message}',${group_id})`, (err,res)=>{
             if(err)
                 throw err;
-            console.log("Message Sent");
+            data.id = res.insertId;
+            for (var index in sockets[data.user_id]){
+                sockets[data.user_id][index].emit('receive_message', data);
+            }
+            for (var index in sockets[data.other_user_id]){
+                sockets[data.other_user_id][index].emit('receive_message', data);
+            }
+        })
+    })
+
+    socket.on('read_message', (id)=>{
+        con.query(`UPDATE chats set is_read=1 where id=${id}`, (err, res)=>{
+            if(err)
+                throw err;
+            console.log("Message read");
         })
     })
 

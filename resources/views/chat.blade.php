@@ -67,8 +67,6 @@
                                     <a href="{{ route('chat',$chatList['id']) }}" class="list-group-item list-group-item-action border-0">
                                         @if($chatList['unread_messages']>0)
                                         <div class="badge bg-success float-right">{{ $chatList['unread_messages'] }}</div>
-                                        @else
-                                        <div class="badge bg-danger float-right">0</div>
                                         @endif
                                         <div class="d-flex align-items-start">
                                             <img src="https://ui-avatars.com/api/?name={{ $chatList['name'] }}" class="rounded-circle mr-1" alt="Vanessa Tucker" width="40" height="40" />
@@ -174,10 +172,6 @@
                 }
             })
 
-            // socket.on('receive_message', (e)=>{
-            //     console.log(e)
-            // })
-
             socket.on('user_connected', function(data){
                 $("#status_"+data).html('<span class="fa fa-circle chat-online"></span> Online');
             });
@@ -185,6 +179,38 @@
             socket.on('user_disconnected', function(data){
                 $("#status_"+data).html('<span class="fa fa-circle chat-offline"></span> Offline');
             });
+
+            socket.on('receive_message', (data)=>{
+                console.log(data)
+                if((data.user_id == user_id && data.other_user_id == other_user_id) || (data.user_id == other_user_id && data.other_user_id == user_id)){
+                    if(data.user_id == user_id){
+                        var html = `<div class="chat-message-right pb-4">
+                                            <div>
+                                                <img src="https://ui-avatars.com/api/?name={{ Auth::user()->name }}" class="rounded-circle mr-1" alt="Name" width="40" height="40" />
+                                                <div class="text-muted small text-nowrap mt-2">${data.time}</div>
+                                            </div>
+                                            <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+                                                <div class="font-weight-bold mb-1">You</div>
+                                                ${data.message}
+                                            </div>
+                                        </div>`
+                    }else{
+                        var html = `<div class="chat-message-left pb-4">
+                                            <div>
+                                                <img src="https://ui-avatars.com/api/?name=${data.otherUserName}" class="rounded-circle mr-1" alt="${data.otherUserName}" width="40" height="40" />
+                                                <div class="text-muted small text-nowrap mt-2">${data.time}</div>
+                                            </div>
+                                            <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+                                                <div class="font-weight-bold mb-1">${data.otherUserName}</div>
+                                                ${data.message}
+                                            </div>
+                                        </div>`
+                    }
+                    $(".chat-messages").append(html);
+                    $(".chat-messages").animate({scrollTop:$(".chat-messages").prop("scrollHeight")},1000);
+                    socket.emit('read_message',data.id);
+                }
+            })
           })
         </script>
 

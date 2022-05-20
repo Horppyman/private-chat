@@ -18,7 +18,7 @@ class HomeController extends Controller {
             $otherUser = User::findOrFail($id);
             $group_id = (Auth::id()>$id)?Auth::id().$id:$id.Auth::id();
             $messages = Chat::where('group_id', $group_id)->get()->toArray();
-            Chat::where(['user_id'=>$id,'other_user_id'=>$user_id]);
+            Chat::where(['user_id'=>$id,'other_user_id'=>$user_id, 'is_read'=>0])->update(['is_read'=>1]);
         }
         $chatLists = User::where('id', '!=', Auth::id())->select('*',DB::raw("(SELECT count(id) from chats where chats.other_user_id=$user_id and chats.user_id=users.id and is_read=0) as unread_messages"))->get()->toArray();
         return view('chat', compact('chatLists', 'messages', 'otherUser', 'id'));
